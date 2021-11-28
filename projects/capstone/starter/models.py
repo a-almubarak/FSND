@@ -3,7 +3,11 @@ from sqlalchemy import Column, String, Integer
 from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify
 
-database_path = ''
+db_host = os.getenv('DB_HOST','localhost:5432')
+db_user = os.getenv('DB_USER','postgres')
+db_password = os.getenv('DB_PASSWORD','123123')
+database_name = 'capstone'
+database_path = f'postgresql://{db_user}:{db_password}@{db_host}/{database_name}'
 
 db = SQLAlchemy()
 
@@ -12,9 +16,8 @@ def setup_db(app):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)
-    
-def db_create_all():
     db.create_all()
+    
 
 association_table = db.Table('association',db.Model.metadata,
                             db.Column('movie_id',db.Integer,db.ForeignKey('movie.id'),primary_key=True),
@@ -33,6 +36,17 @@ class Movie(db.Model):
             'release_date':self.release_date,
             'actors':[i.id for i in self.actors]
         })
+    
+    def insert(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+
+    def update(self):
+        db.session.update(self)
+        db.session.commit()
 
 class Actor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,4 +62,15 @@ class Actor(db.Model):
             'gender':self.gender,
             'movies':[i.id for i in self.movies]
         })
+    def insert(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        # db.session.commit()
+
+    def update(self):
+        db.session.update(self)
+        db.session.commit()
 
