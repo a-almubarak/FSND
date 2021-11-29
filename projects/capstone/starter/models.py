@@ -1,7 +1,5 @@
 import os
-from sqlalchemy import Column, String, Integer
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify
 
 db_host = os.getenv('DB_HOST','localhost:5432')
 db_user = os.getenv('DB_USER','postgres')
@@ -30,11 +28,11 @@ class Movie(db.Model):
     actors = db.relationship("Actor",secondary=association_table,lazy='subquery',backref=db.backref('movies',lazy=True))
 
     def format(self):
-        return jsonify({
+        return ({
             'id':self.id,
             'title':self.title,
             'release_date':self.release_date,
-            'actors':[i.id for i in self.actors]
+            'actors':[{'actor_id' : i.id for i in self.actors}]
         })
     
     def insert(self):
@@ -43,9 +41,9 @@ class Movie(db.Model):
 
     def delete(self):
         db.session.delete(self)
+        db.session.commit()
 
     def update(self):
-        db.session.update(self)
         db.session.commit()
 
 class Actor(db.Model):
@@ -55,12 +53,12 @@ class Actor(db.Model):
     gender = db.Column(db.String)
 
     def format(self):
-        return jsonify({
+        return ({
             'id':self.id,
             'name':self.name,
             'age':self.age,
             'gender':self.gender,
-            'movies':[i.id for i in self.movies]
+            'movies':[{'movie_id' : i.id for i in self.movies}]
         })
     def insert(self):
         db.session.add(self)
@@ -68,9 +66,8 @@ class Actor(db.Model):
 
     def delete(self):
         db.session.delete(self)
-        # db.session.commit()
+        db.session.commit()
 
     def update(self):
-        db.session.update(self)
         db.session.commit()
 
