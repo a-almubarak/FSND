@@ -25,7 +25,7 @@ def actor_body(name, age, gender):
         'gender': gender
     }
 casting_assistant = auth_header(os.getenv('casing_assistant'))
-# casting_director = auth_header(os.getenv('casting_director'))
+casting_director = auth_header(os.getenv('casting_director'))
 executive_producer = auth_header(os.getenv('executive_producer'))
 
 class CapstoneTestClass(unittest.TestCase):
@@ -82,14 +82,14 @@ class CapstoneTestClass(unittest.TestCase):
         self.assertEqual(data['message'],'bad request')
 
 
-    def test_delete_404(self):
+    def test_delete_movies_404(self):
         res = self.client().delete('/movies/0',headers=executive_producer)
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code,404)
         self.assertEqual(data['message'],'not found')
     
-    def test_delete_200(self):
+    def test_delete_movies_200(self):
         res = self.client().delete('/movies/6',headers=executive_producer)
         data = json.loads(res.data)
         
@@ -105,6 +105,72 @@ class CapstoneTestClass(unittest.TestCase):
 
     def test_patch_movies_200(self):
         res = self.client().patch('/movies/5',headers=executive_producer,json={'title':'You'})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code,200)
+        self.assertTrue(data['id'])
+
+#--- Actor test cases -----------------------------------------
+    def test_get_actors_401(self):
+        res = self.client().get('/actors')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(data['code'], 'authorization_header_missing')
+
+    def test_get_actors_200(self):
+        res = self.client().get('/actors', headers=auth_header(os.getenv('casting_assistant')))
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        # there is no actors in the beginning
+        self.assertTrue(data['actors'])
+
+    def test_post_actors_403(self):
+        res = self.client().post('/actors', json=actor_body('Bryan Cranston', '62','M'),
+                                 headers=auth_header(os.getenv('casting_assistant')))
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(data['code'], 'unprocessable')
+
+    def test_post_actors_200(self):
+        res = self.client().post('/actors',json=actor_body('Bryan Cranston','62','M'),headers=casting_director)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['id'])
+
+    def test_post_actors_400(self):
+        res = self.client().post('/actors',json={'name':'Test'},headers=casting_director)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data['message'],'bad request')
+
+
+    def test_delete_actors_404(self):
+        res = self.client().delete('/actors/0',headers=casting_director)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code,404)
+        self.assertEqual(data['message'],'not found')
+    
+    def test_delete_actors_200(self):
+        res = self.client().delete('/actors/1',headers=casting_director)
+        data = json.loads(res.data)
+        
+        self.assertEqual(res.status_code,200)
+        self.assertEqual(data['id'],1)
+    
+    def test_patch_actors_404(self):
+        res = self.client().patch('/actors/0',headers=casting_director)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code,404)
+        self.assertEqual(data['message'],'not found')
+
+    def test_patch_actors_200(self):
+        res = self.client().patch('/actors/2',headers=casting_director,json={'name':'You'})
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code,200)
